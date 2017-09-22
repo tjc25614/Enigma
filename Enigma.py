@@ -37,7 +37,7 @@ def iterate_alphabet(start=1, end=26):
 class Rotor:
     def __init__(self, ring_setting, mapping, initial_setting):
         #the current rotation of the rotor, initial setting
-        self.rotation = letter_to_number(initial_setting) - 1
+        self.rotation = letter_to_number(initial_setting)
         #the internal wiring of the rotor (monoalphabetic substitution cipher)
         self.mapping = mapping
         #offset between the alphabet to the internal wiring
@@ -51,23 +51,22 @@ class Rotor:
     #1st rotor rotates each key press
     #2nd rotor rotates every 26 rotations of the 1st rotor
     def rotate(self):
-        self.rotation = (self.rotation + 1) % 26
+        self.rotation = (self.rotation % 26) + 1
 
     #for signals sent forward through the rotor
     #letter is mapped using internal wiring and rotation
     def encrypt_forwards(self, letter):
-        return self.mapping[(self.rotation + self.ring_setting - 1 + letter_to_number(letter) - 1) % 26]
+        return self.mapping[(self.rotation - 1 + self.ring_setting - 1 + letter_to_number(letter) - 1) % 26]
 
     #for signals sent back through the rotor from the reflector
     def encrypt_backwards(self, letter):
-        return number_to_letter(((self.mapping.index(letter) - self.rotation - (self.ring_setting - 1) + 26) % 26) + 1)
+        return number_to_letter(((self.mapping.index(letter) - (self.rotation - 1) - (self.ring_setting - 1) + 26) % 26) + 1)
         
 class EnigmaMachine:
     def __init__(self, ring_settings, plugboard, initial_settings):
+        ring_settings = ring_settings.split(' ')
         initial_settings = initial_settings.upper()
-        if not initial_settings.isalpha() or len(initial_settings) != 2:
-            raise ValueError("Each rotor needs a letter to start on, e.g. 'OU'")
-
+        
         #Mappings from Rotor I from Enigma I
         self.rotor1 = Rotor(ring_settings[0], 'EKMFLGDQVZNTOWYHXUSPAIBRCJ', initial_settings[0])
         #Mappings from Rotor II from Enigma I
@@ -92,14 +91,14 @@ class EnigmaMachine:
 
         self.initial_settings = initial_settings
 
-        reflector_mapping = 'YRUHQSLDPXNGOKMIEBFZCWVJAT' #Historical UKW-B reflector mapping
+        #Historical UKW-B reflector mapping
+        reflector_mapping = 'YRUHQSLDPXNGOKMIEBFZCWVJAT'
         self.reflector = dict(zip(string.ascii_uppercase, reflector_mapping))
         
 
     #encryption is symmetric, messages are encrypted one letter at a time
     #each letter is sent through the plugboard, the rotors, then the reflector,
     #then back through the rotors, and then, finally, the plugboard again.
-    #No letter can be encrypted as itself.
     def Encrypt(self, message=''):
         cipherText = ''
         letter_count = 0 #used to produce a space every five characters
@@ -109,7 +108,7 @@ class EnigmaMachine:
                 #of the first rotor. Q is the historical turnover letter for Rotor I
                 #from Enigma I.
                 #Rotors rotate before the letter is encrypted.
-                if number_to_letter(self.rotor1.rotation + 1) == 'Q':
+                if number_to_letter(self.rotor1.rotation) == 'Q':
                     self.rotor2.rotate()
                 self.rotor1.rotate()
 
@@ -133,19 +132,33 @@ def Parse_Enigma_Arguments():
     parser.add_argument('RingSettings', help="Each rotor's wiring relative to the alphabet, two 1-26 integers separated by a space, e.g. '4 15'")
     parser.add_argument('Plugboard', help='Plugboard letter matches, the form "AB CD EF" (pairs with spaces). Can be empty, i.e. "". Accepts a variable number of matchings. Letters are implicitly mapped to themselves if not specified, but this can also be explicitly done by mappings in the form "AA" or "CC".')
     parser.add_argument('InitialSettings', help='The initial rotor positions, two letters e.g. "JK"')
+    parser.add_argument('-m', '--message', help='The message to en/decrypt. If not specificied, Enigma will read from stdin')
     args = parser.parse_args()
-    return (args.RingSettings, args.Plugboard, args.InitialSettings)
+    return (args.RingSettings, args.Plugboard, args.InitialSettings, args.message)
 
+def Validate_Input(args):
+    ring_settings = args[0].split(' ')
+    initial_settings = args[2].upper()
+    if len(ring_settings) < 2:
+        print("ERROR: Each rotor needs a ring setting, a 1-26 integer, e.g. '21 6'")
+        return False
+    else:
+        if not initial_settings.isalpha() or len(initial_settings) != 2:
+            print("ERROR: Each rotor needs a letter to start on, e.g. 'OU'")
+            return False
+    return True
+    
 #read arguments, set up engima machine, and encrypt
 def Enigma_Main():
     args = Parse_Enigma_Arguments()
-    ring_settings = args[0].split(' ')
-    if len(ring_settings) < 2:
-        print("ERROR: Each rotor needs a ring setting, a 1-26 integer, e.g. '21 6'")
-    else:
+    if Validate_Input(args):
         try:
-            enigma = EnigmaMachine(ring_settings=ring_settings, plugboard=args[1], initial_settings=args[2])
-            plainText = input('> ').upper()
+            enigma = EnigmaMachine(ring_settings=args[0], plugboard=args[1], initial_settings=args[2])
+            #did the user specify the message in args?
+            if args[3]:
+                plainText = args[3].upper()
+            else:
+                plainText = input('> ').upper()
             cipherText = enigma.Encrypt(plainText)
             print(cipherText)
         except ValueError as error:
