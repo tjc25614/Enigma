@@ -4,5 +4,7 @@
 Uses the following historical Enigma parts:
 
 Rotor I from Enigma I
+
 Rotor II from Enigma II
+
 UKW-B Reflector
