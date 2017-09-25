@@ -128,11 +128,11 @@ class EnigmaMachine:
 
 #set up help & parse commandline arguments for engima machine
 def Parse_Enigma_Arguments():
-    parser = argparse.ArgumentParser(description="Modified Enigma machine with two rotors. Enigma machines were used by the Germans in WWII to symmetrically encrypt and decrypt messages. More can be read about their use and workings at https://en.wikipedia.org/wiki/Enigma_machine\nThis machine uses two rotors instead of three (or four) as was used in WWII. This emulation of Enigma uses the I and II rotors, in that order, from 1930's Enigma I as well as the UKW-B reflector. This emulation requires the user to set the ring settings of the two rotors, the plugboard, and the initial setting of the rotors. The user is then prompted for text to be encrypted.", epilog='Example: ' + sys.argv[0] + ' "5 24" "IH VX PW LA ME OY FB QG TD ZC" JW')
+    parser = argparse.ArgumentParser(description="Modified Enigma machine with two rotors. Germany (and others) used Enigma machines in WWII to symmetrically encrypt and decrypt messages. More can be read about their use and workings at https://en.wikipedia.org/wiki/Enigma_machine\nThis machine uses two rotors instead of three (or four) as was used in WWII. This version of Enigma uses the I and II rotors, in that order, from 1930's Enigma I as well as the UKW-B reflector. This version requires the user to set the ring settings of the two rotors, the plugboard, and the initial setting of the rotors.", epilog='Example: ' + sys.argv[0] + ' "5 24" "IH VX PW LA ME OY FB QG TD ZC" JW')
     parser.add_argument('RingSettings', help="Each rotor's wiring relative to the alphabet, two 1-26 integers separated by a space, e.g. '4 15'")
     parser.add_argument('Plugboard', help='Plugboard letter matches, the form "AB CD EF" (pairs with spaces). Can be empty, i.e. "". Accepts a variable number of matchings. Letters are implicitly mapped to themselves if not specified, but this can also be explicitly done by mappings in the form "AA" or "CC".')
     parser.add_argument('InitialSettings', help='The initial rotor positions, two letters e.g. "JK"')
-    parser.add_argument('-m', '--message', help='The message to en/decrypt. If not specificied, Enigma will read from stdin')
+    parser.add_argument('-m', '--message', help='The message to en/decrypt. If not specified, Enigma will read from stdin')
     args = parser.parse_args()
     return (args.RingSettings, args.Plugboard, args.InitialSettings, args.message)
 
